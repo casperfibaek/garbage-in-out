@@ -38,5 +38,5 @@ input_vector = create_input_tensor(input_ids, input_amounts)
 result = inference(input_vector)
 
 print(f"Predicted total output: {result[1]:.2f} tons of {result[0]:.2f}")
->>>> "Predicted total output: 5 tons of shredder material"
+>>>> "Predicted total output: 3.825 tons of shredder material"
 ```
