@@ -44,6 +44,30 @@ print(f"Predicted total output: {result[1]:.2f} tons of {result[0]:.2f}")
 ## 💻 Sleek Interface
 Check out our intuitive interface that makes waste prediction a breeze! With simple input fields and real-time updates, you'll be analyzing waste patterns like a pro.
 
+```bash
+python app.py
+```
+
+Navigate to 'localhost:8080' and see the glory!
+
 <div align="center">
     <img src="./example.png" alt="Interface Example" width="600"/>
 </div>
+
+## 🔧 Installation
+1. Clone this repository
+```bash
+git clone https://github.com/casperfibaek/garbage-in-out.git
+cd garbage-in-out
+```
+
+2. Create and activate the environment
+```bash
+conda env update -n garbage --file environment.yml
+conda activate garbage
+```
+
+3. Verify installation
+```bash
+python -c "import torch; print(torch.__version__)"
+```
