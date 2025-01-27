@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Weight Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-8"></body>
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+        <div class="flex items-center gap-4 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Material Weight Calculator</h1>
+        </div>
+        
+        <div id="materialForm" class="space-y-4">
+            <div class="material-input flex gap-4 items-center">
+                <input type="number" placeholder="Material number" class="material-number flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" placeholder="Weight (kg)" class="material-amount w-32 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" min="0">
+                <button onclick="removeMaterial(this)" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Remove</button>
+            </div>
+        </div>
+
+        <div class="flex gap-4 mt-6">
+            <button onclick="addMaterial()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">Add Material</button>
+            <button onclick="calculateWeights()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">Calculate</button>
+        </div>
+
+        <div id="output" class="mt-8"></div>
+    </div>
+
+    <script>
+        function addMaterial() {
+            const div = document.createElement('div');
+            div.className = 'material-input flex gap-4 items-center';
+            div.innerHTML = `
+            <input type="number" placeholder="Material number" class="material-number flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <input type="number" placeholder="Weight (kg)" class="material-amount w-32 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" min="0" step="0.01" required>
+            <button onclick="removeMaterial(this)" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Remove</button>
+            `;
+            document.getElementById('materialForm').appendChild(div);
+        }
+
+        function removeMaterial(button) {
+            button.parentElement.remove();
+        }
+
+        function calculateWeights() {
+            const materials = document.getElementsByClassName('material-input');
+            let materialsList = [];
+            
+            for (let material of materials) {
+                const name = material.querySelector('.material-number').value;
+                const amount = material.querySelector('.material-amount').value;
+                if (name && amount) {
+                    materialsList.push({ name, amount: parseFloat(amount) });
+                }
+            }
+
+            fetch('/predict_outputs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ materials: materialsList })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const prediction = data.prediction;
+                // {id: 90, name: 'Nyt tyndpladeskrot i galvaniserede ruller', row_id: 59, weight: 3.92}
+
+                const outputDiv = document.getElementById('output');
+                const dataArray = Array.isArray(prediction) ? prediction : [prediction];
+                outputDiv.innerHTML = dataArray.map(item => `
+                    <div class="p-4 border rounded-md mb-2">
+                        <p class="font-bold">ID: ${item.id}</p>
+                        <p>${item.name}</p>
+                        <p>Weight: ${item.weight} kg</p>
+                    </div>
+                `).join('');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -8,12 +8,16 @@ import pandas as pd
 
 from model_arch import NetworkNorm, NetworkTotal
 
+torch.set_printoptions(sci_mode=False)
+np.set_printoptions(suppress=True)
+
 MODEL_FOLDER = "./models"
 DATA_FOLDER = "./data"
 SIZE = 512
 DROPOUT = 0.2
 X_INDICES = 489
 Y_INDICES = 434
+THRESHOLD = 0.01
 
 model_norm = NetworkNorm(X_INDICES, Y_INDICES, SIZE=SIZE, DROPOUT=DROPOUT)
 model_total = NetworkTotal(X_INDICES, SIZE=SIZE, DROPOUT=DROPOUT)
@@ -54,6 +58,10 @@ def output_id_to_row_id(output_id):
     return unique_outputs[unique_outputs["id"] == output_id]["row_id"].values[0]
 
 
+def output_id_to_output_name(output_id):
+    return unique_outputs[unique_outputs["id"] == output_id]["name"].values[0]
+
+
 def create_input_tensor(input_ids, input_amounts):
     zero_tensor = torch.zeros(max_input_row_id + 1, dtype=torch.float32)
     for input_id, input_amount in zip(input_ids, input_amounts):
@@ -61,9 +69,6 @@ def create_input_tensor(input_ids, input_amounts):
         zero_tensor[row_id] = input_amount
 
     return zero_tensor.unsqueeze(0)
-
-
-x_test = create_input_tensor([145], [5860])
 
 
 def inference(x_test):
@@ -74,15 +79,36 @@ def inference(x_test):
     return y_norm, y_total
 
 
-y_norm, y_total = inference(x_test)
-output_amount = y_total.item() * x_test.sum().item()
+def predict_output(x_test):
+    y_norm, y_total = inference(x_test)
+    output_amount = y_total.item() * x_test.sum().item()
 
-# top three input ids
-top_three_row_ids = torch.topk(y_norm, 3).indices.squeeze().tolist()
-top_three_values = torch.topk(F.softmax(y_norm), 3).values.squeeze().tolist()
-for row_id in top_three_row_ids:
-    input_id = row_id_to_input_id(row_id)
-    value = round(top_three_values.pop(0), 3)
-    print(f"Input ID: {input_id}, Row ID: {row_id}, Value: {value}")
+    # argsort the y_norm tensor
+    sorted_result = torch.argsort(y_norm, descending=True)
 
-pdb.set_trace()
+    results = []
+    for i in range(sorted_result.shape[1]):
+        result_index = sorted_result[0, i].item()
+        result_value = y_norm[0, result_index].item()
+        if result_value < THRESHOLD:
+            break
+
+        result_id = row_id_to_output_id(result_index)
+        result_name = output_id_to_output_name(result_id)
+        result_weight = result_value * output_amount
+
+        results.append(
+            {
+                "id": int(result_id),
+                "row_id": result_index,
+                "weight": round(result_weight, 2),
+                "name": result_name,
+            }
+        )
+
+    return results
+
+
+if __name__ == "__main__":
+    x_test = create_input_tensor([11, 656], [2650, 2390])
+    print(predict_output(x_test))

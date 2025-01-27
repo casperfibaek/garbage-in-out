@@ -56,7 +56,7 @@ y_val = y_val.to(device)
 # train the model
 model_norm = NetworkNorm(x_indices, y_indices, SIZE=SIZE, DROPOUT=DROPOUT)
 optimizer = torch.optim.AdamW(model_norm.parameters(), lr=0.0001, weight_decay=0.01)
-loss_fn = nn.CrossEntropyLoss()
+loss_fn = nn.MSELoss()
 
 model_norm.to(device)
 

@@ -12,14 +12,13 @@ class NetworkNorm(nn.Module):
         self.DROPOUT = DROPOUT
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
+        x = F.mish(self.fc1(x))
         x = F.dropout(x, p=self.DROPOUT)
-        x = F.relu(self.fc2(x))
+        x = F.mish(self.fc2(x))
         x = F.dropout(x, p=self.DROPOUT)
         x = self.fc3(x)
 
-        # can only be positive
-        x = F.relu(x)
+        x = F.softmax(x, dim=1)
         return x
 
 
@@ -32,9 +31,9 @@ class NetworkTotal(nn.Module):
         self.DROPOUT = DROPOUT
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
+        x = F.mish(self.fc1(x))
         x = F.dropout(x, p=self.DROPOUT)
-        x = F.relu(self.fc2(x))
+        x = F.mish(self.fc2(x))
         x = F.dropout(x, p=self.DROPOUT)
         x = self.fc3(x)
 
