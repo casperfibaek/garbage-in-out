@@ -22,7 +22,7 @@ This repository houses two sophisticated neural network models that predict recy
 ## Example
 ```python
 # Example usage - Total output prediction
-from inference import inference, create_input_tensor
+from inference import predict_output, create_input_tensor
 
 input_ids = [
     11, # Old iron
@@ -35,8 +35,15 @@ input_amounts = [
 ]
 
 input_vector = create_input_tensor(input_ids, input_amounts)
-result = inference(input_vector)
+result = predict_output(input_vector)
 
 print(f"Predicted total output: {result[1]:.2f} tons of {result[0]:.2f}")
 >>>> "Predicted total output: 3.825 tons of shredder material"
 ```
+
+## 💻 Sleek Interface
+Check out our intuitive interface that makes waste prediction a breeze! With simple input fields and real-time updates, you'll be analyzing waste patterns like a pro.
+
+<div align="center">
+    <img src="./example.png" alt="Interface Example" width="600"/>
+</div>

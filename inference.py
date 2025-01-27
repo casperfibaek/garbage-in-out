@@ -79,9 +79,19 @@ def inference(x_test):
     return y_norm, y_total
 
 
-def predict_output(x_test):
-    y_norm, y_total = inference(x_test)
-    output_amount = y_total.item() * x_test.sum().item()
+def predict_output(input_tensor):
+    """
+    Predict output compositions given an input tensor of materials.
+
+    Args:
+        input_tensor (torch.Tensor): Input tensor containing material amounts.
+
+    Returns:
+        list: List of dictionaries containing predicted output compositions.
+    """
+    torch.manual_seed(42)  # Set fixed seed for reproducibility
+    y_norm, y_total = inference(input_tensor)
+    output_amount = y_total.item() * input_tensor.sum().item()
 
     # argsort the y_norm tensor
     sorted_result = torch.argsort(y_norm, descending=True)
