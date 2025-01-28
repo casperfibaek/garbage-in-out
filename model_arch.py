@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 # create the models
 class NetworkNorm(nn.Module):
-    def __init__(self, x_indices, y_indices, SIZE=512, DROPOUT=0.2):
+    def __init__(self, x_indices, y_indices, SIZE=128, DROPOUT=0.1):
         super(NetworkNorm, self).__init__()
         self.fc1 = nn.Linear(x_indices, SIZE)
         self.fc2 = nn.Linear(SIZE, SIZE // 2)
@@ -23,8 +23,9 @@ class NetworkNorm(nn.Module):
 
 
 class NetworkTotal(nn.Module):
-    def __init__(self, x_indices, SIZE=512, DROPOUT=0.2):
+    def __init__(self, x_indices, y_indices, SIZE=128, DROPOUT=0.1):
         super(NetworkTotal, self).__init__()
+        self.y_indices = y_indices
         self.fc1 = nn.Linear(x_indices, SIZE)
         self.fc2 = nn.Linear(SIZE, SIZE // 2)
         self.fc3 = nn.Linear(SIZE // 2, 1)

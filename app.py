@@ -23,7 +23,7 @@ def predict_outputs():
         x_test = create_input_tensor(material_ids, material_amounts)
 
         # Run prediction using the model
-        result = predict_output(x_test)
+        result = predict_output(x_test, material_amounts)
 
         # Return prediction results
         return jsonify({"status": "success", "prediction": result})
