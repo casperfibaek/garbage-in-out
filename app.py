@@ -12,6 +12,8 @@ def predict_outputs():
         data = request.get_json()
 
         materials = data["materials"]
+        threshold_percent = float(data["percentThreshold"])
+        threshold_weight = float(data["weightThreshold"])
 
         material_ids = []
         material_amounts = []
@@ -23,7 +25,9 @@ def predict_outputs():
         x_test = create_input_tensor(material_ids, material_amounts)
 
         # Run prediction using the model
-        result = predict_output(x_test, material_amounts)
+        result = predict_output(
+            x_test, material_amounts, threshold_percent, threshold_weight
+        )
 
         # Return prediction results
         return jsonify({"status": "success", "prediction": result})

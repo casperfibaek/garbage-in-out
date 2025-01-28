@@ -91,7 +91,7 @@ def train_model(
     bs=32,
     lr=0.0001,
     wd=0.01,
-    patience=10,
+    patience=25,
     sum_loss=False,
 ):
     model_norm = model_arch(
@@ -182,29 +182,29 @@ def train_model_folded(model, sum_loss=False):
 
 
 if __name__ == "__main__":
-    x_train, x_val, y_train, y_val = prepare_data()
+    # x_train, x_val, y_train, y_val = prepare_data()
 
-    model_norm = train_model(
-        x_train,
-        x_val,
-        y_train,
-        y_val,
-        NetworkNorm,
-        sum_loss=False,
-    )
+    # model_norm = train_model(
+    #     x_train,
+    #     x_val,
+    #     y_train,
+    #     y_val,
+    #     NetworkNorm,
+    #     sum_loss=False,
+    # )
 
-    model_total = train_model(
-        x_train,
-        x_val,
-        y_train,
-        y_val,
-        NetworkTotal,
-        sum_loss=True,
-    )
+    # model_total = train_model(
+    #     x_train,
+    #     x_val,
+    #     y_train,
+    #     y_val,
+    #     NetworkTotal,
+    #     sum_loss=True,
+    # )
 
-    # save the models
-    torch.save(model_norm.state_dict(), os.path.join(MODEL_FOLDER, "model_norm.pth"))
-    torch.save(model_total.state_dict(), os.path.join(MODEL_FOLDER, "model_total.pth"))
+    # # save the models
+    # torch.save(model_norm.state_dict(), os.path.join(MODEL_FOLDER, "model_norm.pth"))
+    # torch.save(model_total.state_dict(), os.path.join(MODEL_FOLDER, "model_total.pth"))
 
     model_norm = train_model_folded(NetworkNorm, sum_loss=False)
     model_total = train_model_folded(NetworkTotal, sum_loss=True)

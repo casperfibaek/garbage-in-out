@@ -15,7 +15,6 @@ MODEL_FOLDER = "./models"
 DATA_FOLDER = "./data"
 X_INDICES = 489
 Y_INDICES = 434
-THRESHOLD = 0.01
 FOLDS = 5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -121,7 +120,7 @@ def inference(x_test):
     return y_norm, y_total, y_norm_std, y_total_std
 
 
-def predict_output(input_tensor, material_amounts):
+def predict_output(input_tensor, material_amounts, threshold_percent, threshold_weight):
     """
     Predict output compositions given an input tensor of materials.
 
@@ -144,12 +143,15 @@ def predict_output(input_tensor, material_amounts):
         result_value = y_norm[0, result_index].item()
         result_value_std = y_norm_std[0, result_index].item()
 
-        if result_value < THRESHOLD:
+        if result_value < (threshold_percent / 100.0):
             break
 
         result_id = row_id_to_output_id(result_index)
         result_name = output_id_to_output_name(result_id)
         result_weight = result_value * output_amount.item()
+
+        if result_weight < threshold_weight:
+            break
 
         results.append(
             {
@@ -169,4 +171,4 @@ if __name__ == "__main__":
     materials = [11, 656]
     amounts = [2650, 2390]
     x_test = create_input_tensor(materials, amounts)
-    print(predict_output(x_test, amounts))
+    print(predict_output(x_test, amounts, 1.0, 10.0))
