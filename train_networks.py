@@ -93,22 +93,24 @@ def train_model(
     wd=0.01,
     patience=25,
     sum_loss=False,
+    weights=None,
 ):
-    model_norm = model_arch(
+    model = model_arch(
         x_train.shape[1],
         y_train.shape[1],
         SIZE=size,
         DROPOUT=dropout,
     )
-    optimizer = torch.optim.AdamW(model_norm.parameters(), lr=lr, weight_decay=wd)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
     loss_fn = nn.MSELoss()
+    loss_fn_ce = nn.CrossEntropyLoss(weight=weights)
 
-    model_norm.to(DEVICE)
+    model.to(DEVICE)
 
     best_loss = 100000.0
     counter = 0
     for epoch in range(epochs):
-        model_norm.train()
+        model.train()
         for i in range(0, len(x_train), bs):
             x_batch = x_train[i : i + bs]
 
@@ -118,20 +120,21 @@ def train_model(
                 y_batch = y_train[i : i + bs][:, 1:]
 
             optimizer.zero_grad()
-            output = model_norm(x_batch)
+            output = model(x_batch)
             loss = loss_fn(output, y_batch)
             loss.backward()
             optimizer.step()
 
         # Validation loss
-        model_norm.eval()
+        model.eval()
         with torch.no_grad():
-            output = model_norm(x_val)
+            output = model(x_val)
 
             if sum_loss:
                 loss = loss_fn(output, y_val[:, 0][:, np.newaxis]).item() * 100.0
             else:
-                loss = loss_fn(output, y_val[:, 1:]).item() * 100.0
+                # loss = loss_fn(output, y_val[:, 1:]).item() * 100.0
+                loss = loss_fn_ce(output, y_val[:, 1:]).item()
 
             if loss < best_loss:
                 best_loss = loss
@@ -148,11 +151,17 @@ def train_model(
         f"Best Loss: {round(best_loss, 3)} | size: {size} | dropout: {dropout} | lr: {lr} | wd: {wd} | bs: {bs}"
     )
 
-    return model_norm
+    return model
 
 
-def train_model_folded(model, sum_loss=False):
+def train_model_folded(model_arch, sum_loss=False):
     x_train, y_train = prepare_data_kfold()
+
+    counts = (torch.cat(y_train, dim=0)[:, 1:] > 0).sum(axis=0).float()
+    counts = torch.where(counts == 0, torch.tensor(1, dtype=int), counts)
+    weights = 1.0 / counts
+    weights_norm = weights / weights.sum() * len(counts)
+    weights_norm = weights_norm.to(DEVICE)
 
     models = []
     for i in range(5):
@@ -167,16 +176,17 @@ def train_model_folded(model, sum_loss=False):
         y_train_fold = y_train_fold.to(DEVICE)
         y_val = y_val.to(DEVICE)
 
-        model_norm = train_model(
+        model = train_model(
             x_train_fold,
             x_val,
             y_train_fold,
             y_val,
-            model,
+            model_arch,
             sum_loss=sum_loss,
+            weights=weights_norm,
         )
 
-        models.append(model_norm)
+        models.append(model)
 
     return models
 
@@ -207,14 +217,15 @@ if __name__ == "__main__":
     # torch.save(model_total.state_dict(), os.path.join(MODEL_FOLDER, "model_total.pth"))
 
     model_norm = train_model_folded(NetworkNorm, sum_loss=False)
-    model_total = train_model_folded(NetworkTotal, sum_loss=True)
 
-    for i, model in enumerate(model_norm):
+    for i, trained_model in enumerate(model_norm):
         torch.save(
-            model.state_dict(), os.path.join(MODEL_FOLDER, f"model_norm_{i}.pth")
+            trained_model.state_dict(),
+            os.path.join(MODEL_FOLDER, f"model_norm_ce_{i}.pth"),
         )
 
-    for i, model in enumerate(model_total):
-        torch.save(
-            model.state_dict(), os.path.join(MODEL_FOLDER, f"model_total_{i}.pth")
-        )
+    # model_total = train_model_folded(NetworkTotal, sum_loss=True)
+    # for i, trained_model in enumerate(model_total):
+    #     torch.save(
+    #         trained_model.state_dict(), os.path.join(MODEL_FOLDER, f"model_total_{i}.pth")
+    #     )

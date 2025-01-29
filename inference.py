@@ -29,7 +29,7 @@ for i in range(FOLDS):
     # Load the model
     model_norm.load_state_dict(
         torch.load(
-            os.path.join(MODEL_FOLDER, f"model_norm_{i}.pth"),
+            os.path.join(MODEL_FOLDER, f"model_norm_ce_{i}.pth"),
             weights_only=True,
         )
     )
