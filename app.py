@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 
-from inference import predict_output, create_input_tensor
+from inference import predict_output_par, predict_output_seq, create_input_tensor
 
 app = Flask(__name__, static_folder="app", static_url_path="")
 
@@ -14,6 +14,7 @@ def predict_outputs():
         materials = data["materials"]
         threshold_percent = float(data["percentThreshold"])
         threshold_weight = float(data["weightThreshold"])
+        processing_method = data["processingMethod"]
 
         material_ids = []
         material_amounts = []
@@ -22,12 +23,26 @@ def predict_outputs():
             material_ids.append(int(material["name"]))
             material_amounts.append(int(material["amount"]))
 
-        x_test = create_input_tensor(material_ids, material_amounts)
-
         # Run prediction using the model
-        result = predict_output(
-            x_test, material_amounts, threshold_percent, threshold_weight
-        )
+        if processing_method == "parallel":
+            result = predict_output_par(
+                material_ids,
+                material_amounts,
+                threshold_percent,
+                threshold_weight,
+            )
+        elif processing_method == "sequential":
+            result = predict_output_seq(
+                material_ids,
+                material_amounts,
+                threshold_percent,
+                threshold_weight,
+            )
+        else:
+            return (
+                jsonify({"status": "error", "message": "Invalid processing method"}),
+                400,
+            )
 
         # Return prediction results
         return jsonify({"status": "success", "prediction": result})

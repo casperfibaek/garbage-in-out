@@ -25,6 +25,12 @@
         <div class="flex gap-4 mt-6">
             <button onclick="addMaterial()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">Add Material</button>
             <button onclick="calculateWeights()" class="w-32 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">Calculate</button>
+            <div class="flex items-center gap-2"></div>
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="processingMethod" class="sr-only peer" checked>
+                <div class="relative w-11 h-6 bg-gray-200 peer-checked:bg-blue-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                <span class="ml-2 text-sm text-gray-700" id="processingLabel">Sequential</span>
+            </label>
         </div>
         
         <div class="mt-8 flex items-center">
@@ -45,6 +51,12 @@
             <span class="mx-4 text-gray-500">Output</span>
             <div class="flex-grow border-t border-gray-300"></div>
         </div>
+
+        <script>
+            document.getElementById('processingMethod').addEventListener('change', function() {
+            document.getElementById('processingLabel').textContent = this.checked ? 'Sequential' : 'Parallel';
+            });
+        </script>
 
         <div id="output" class="mt-8"></div>
         </div>
@@ -100,7 +112,8 @@
                 body: JSON.stringify({
                     materials: materialsList,
                     percentThreshold: document.getElementById('percentThreshold').value,
-                    weightThreshold: document.getElementById('weightThreshold').value
+                    weightThreshold: document.getElementById('weightThreshold').value,
+                    processingMethod: document.getElementById('processingMethod').checked ? 'sequential' : 'parallel',
                 })
             })
             .then(response => response.json())

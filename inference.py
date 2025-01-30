@@ -120,17 +120,11 @@ def inference(x_test):
     return y_norm, y_total, y_norm_std, y_total_std
 
 
-def predict_output(input_tensor, material_amounts, threshold_percent, threshold_weight):
-    """
-    Predict output compositions given an input tensor of materials.
-
-    Args:
-        input_tensor (torch.Tensor): Input tensor containing material amounts.
-
-    Returns:
-        list: List of dictionaries containing predicted output compositions.
-    """
+def predict_output_par(
+    material_ids, material_amounts, threshold_percent, threshold_weight
+):
     torch.manual_seed(42)  # Set fixed seed for reproducibility
+    input_tensor = create_input_tensor(material_ids, material_amounts)
     y_norm, y_total, y_norm_std, y_total_std = inference(input_tensor)
     output_amount = y_total.item() * torch.tensor(material_amounts).sum()
 
@@ -163,7 +157,63 @@ def predict_output(input_tensor, material_amounts, threshold_percent, threshold_
             }
         )
 
-    # pdb.set_trace()
+    return results
+
+
+def predict_output_seq(
+    material_ids, material_amounts, threshold_percent, threshold_weight
+):
+    torch.manual_seed(42)  # Set fixed seed for reproducibility
+
+    results = []
+    for material_id, material_amount in zip(material_ids, material_amounts):
+        input_tensor = create_input_tensor([material_id], [material_amount])
+        y_norm, y_total, y_norm_std, y_total_std = inference(input_tensor)
+        output_amount = y_total.item() * material_amount
+
+        # argsort the y_norm tensor
+        sorted_result = torch.argsort(y_norm, descending=True)
+
+        for i in range(sorted_result.shape[1]):
+            result_index = sorted_result[0, i].item()
+            result_value = y_norm[0, result_index].item()
+            result_value_std = y_norm_std[0, result_index].item()
+
+            if result_value < (threshold_percent / 100.0):
+                break
+
+            result_id = row_id_to_output_id(result_index)
+            result_name = output_id_to_output_name(result_id)
+            result_weight = result_value * output_amount
+
+            if result_weight < threshold_weight:
+                break
+
+            # if id already exists, update it instead of adding a new one
+            for result in results:
+                if result["id"] == result_id:
+                    result["weight"] += round(result_weight, 1)
+                    # weight the std by the weight
+                    result["std"] = round(
+                        result_weight / result["weight"] * result["std"]
+                        + result_weight / result["weight"] * result_value_std,
+                        1,
+                    )
+                    break
+
+            results.append(
+                {
+                    "id": int(result_id),
+                    "row_id": result_index,
+                    "weight": round(result_weight, 1),
+                    "std": round(result_weight * result_value_std, 1),
+                    "name": result_name,
+                }
+            )
+
+    # order results by weight
+    results = sorted(results, key=lambda x: x["weight"], reverse=True)
+
     return results
 
 
@@ -171,4 +221,4 @@ if __name__ == "__main__":
     materials = [11, 656]
     amounts = [2650, 2390]
     x_test = create_input_tensor(materials, amounts)
-    print(predict_output(x_test, amounts, 1.0, 10.0))
+    print(predict_output_par(x_test, amounts, 1.0, 10.0))
